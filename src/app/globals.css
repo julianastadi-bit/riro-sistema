@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  --color-cobre-50: #fbf6f2;
+  --color-cobre-100: #f4e8df;
+  --color-cobre-200: #e8cfbf;
+  --color-cobre-300: #d7ac92;
+  --color-cobre-400: #c68f6e;
+  --color-cobre-500: #b97953; /* cor do logo */
+  --color-cobre-600: #9e6141;
+  --color-cobre-700: #804d34;
+  --color-cobre-800: #5e392a;
+  --color-cobre-900: #3d261d;
+
+  --color-creme: #faf7f4;
+  --color-grafite: #2b2522;
+  --color-linha: #e9e1da;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-creme);
+    color: var(--color-grafite);
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+  }
+}
