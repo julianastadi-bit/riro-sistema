@@ -41,8 +41,16 @@ export default async function Painel() {
       .eq("status", "previsto")
       .lte("data_prevista", somarDias(hoje, 7));
     const atrasados = (proximos ?? []).filter((r) => r.data_prevista < hoje);
+    const { data: aPagar } = await supabase
+      .from("contas_pagar")
+      .select("valor, data_vencimento")
+      .eq("status", "aberto")
+      .lte("data_vencimento", somarDias(hoje, 7));
+    const pagarVencido = (aPagar ?? []).filter((c) => c.data_vencimento < hoje);
+    const pagar7 = somar((aPagar ?? []).filter((c) => c.data_vencimento >= hoje).map((c) => Number(c.valor)));
+    const receber7 = somar((proximos ?? []).filter((r) => r.data_prevista >= hoje).map((r) => Number(r.valor_liquido)));
     indicadores = (
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Indicador
           rotulo="Faturado no mês"
           valor={formatarMoeda(somar(doMes.map((f) => Number(f.total_avec ?? 0))))}
@@ -63,6 +71,22 @@ export default async function Painel() {
           valor={formatarMoeda(somar(atrasados.map((r) => Number(r.valor_liquido))))}
           detalhe={`${atrasados.length} sem conciliação`}
           tom={atrasados.length ? "alerta" : undefined}
+        />
+        <Indicador
+          rotulo="A pagar em 7 dias"
+          valor={formatarMoeda(pagar7)}
+          detalhe={
+            pagarVencido.length
+              ? `+ ${formatarMoeda(somar(pagarVencido.map((c) => Number(c.valor))))} vencidos (${pagarVencido.length})`
+              : "Nenhuma conta vencida"
+          }
+          tom={pagarVencido.length ? "alerta" : undefined}
+        />
+        <Indicador
+          rotulo="Saldo previsto 7 dias"
+          valor={formatarMoeda(somar([receber7, -pagar7]))}
+          detalhe="A receber − a pagar (sem saldo bancário)"
+          tom={receber7 - pagar7 < 0 ? "alerta" : undefined}
         />
       </div>
     );

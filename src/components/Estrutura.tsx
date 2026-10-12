@@ -20,7 +20,7 @@ const itens: Item[] = [
   { href: "/", rotulo: "Painel", icone: LayoutDashboard },
   { href: "/fechamentos", rotulo: "Fechamento de caixa", icone: ClipboardCheck },
   { href: "/recebiveis", rotulo: "Contas a receber", icone: HandCoins, papeis: GERENCIA },
-  { href: "#", rotulo: "Contas a pagar", icone: Receipt, papeis: GERENCIA, emBreve: true },
+  { href: "/pagar", rotulo: "Contas a pagar", icone: Receipt, papeis: GERENCIA },
   { href: "#", rotulo: "Conciliação", icone: GitCompareArrows, papeis: GERENCIA, emBreve: true },
   { href: "#", rotulo: "Fluxo de caixa", icone: TrendingUp, papeis: GERENCIA, emBreve: true },
   { href: "#", rotulo: "DRE", icone: FileBarChart, papeis: GERENCIA, emBreve: true },

@@ -51,3 +51,17 @@ export function somarDias(iso: string, dias: number) {
 
 /** Centavos para evitar erro de ponto flutuante em somas */
 export const somar = (valores: number[]) => valores.reduce((s, v) => s + Math.round(v * 100), 0) / 100;
+
+/** Soma meses mantendo o dia (31/01 + 1 mês → 28/02 ou 29/02) */
+export function somarMeses(iso: string, meses: number) {
+  const [a, m, d] = iso.split("-").map(Number);
+  const ultimoDia = new Date(Date.UTC(a, m - 1 + meses + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(a, m - 1 + meses, Math.min(d, ultimoDia))).toISOString().slice(0, 10);
+}
+
+/** "2026-10-01" → "out/2026" */
+export function formatarMes(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  return `${meses[Number(iso.slice(5, 7)) - 1]}/${iso.slice(0, 4)}`;
+}

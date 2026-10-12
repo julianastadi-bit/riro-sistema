@@ -1,6 +1,9 @@
 # RIRO · Sistema Financeiro
 
-Sistema de gestão financeira do RIRO Salon. Fase 1: **fechamento de caixa diário → contas a receber**.
+Sistema de gestão financeira do RIRO Salon.
+
+- **Fase 1:** fechamento de caixa diário → contas a receber
+- **Fase 2:** contas a pagar, fornecedores e importação da aba PAGTO
 
 Stack: Next.js 15 (App Router) · Supabase (Postgres, Auth, Storage, RLS) · Tailwind 4 · deploy na Netlify.
 
@@ -16,13 +19,21 @@ Financeiro confere ◄───────────────────�
 - Ao enviar, o sistema exige que a soma das formas bata com o **TOTAL FATURADO** do Avec (ou uma justificativa) e que o dinheiro da gaveta seja contado.
 - Cada forma de pagamento (Cadastros) define: soma no faturado, gera recebível, receita na DRE, destino (caixa/banco/adquirente/cliente), taxa e prazo.
 
+## Contas a pagar
+
+- Lançamento único, **parcelado** (divide o valor) ou **recorrente** (repete todo mês), com competência para a DRE.
+- Baixa individual (com juros/multa e desconto) ou **em lote** pela lista. A conta de saída pode ser de outra empresa: o sistema sinaliza para acerto entre empresas.
+- Conta paga fica travada; **estorno** e **cancelamento** exigem motivo e ficam no histórico.
+- Anexos privados de boleto e comprovante (bucket `contas-pagar`).
+- **Importar planilha** (`/pagar/importar`): lê a aba PAGTO do FLUXO RIRO SALON. Linhas com OK entram pagas na conta do banco indicado; o campo NUMERO vira parcela (`02/03`), competência (`08/2026`) ou nº do documento. Reimportar não duplica.
+
 ## Perfis
 
 | Perfil | Acesso |
 |---|---|
 | Operação | Lança e envia fechamentos |
-| Gerência | + vê contas a receber e valores |
-| Financeiro | + confere, reabre, edita cadastros e taxas |
+| Gerência | + vê contas a receber, contas a pagar e valores |
+| Financeiro | + confere, reabre, lança e paga contas, importa planilha, edita cadastros |
 | Administrador | + gerencia usuários |
 
 ## Implantação
@@ -56,7 +67,6 @@ npm run dev
 Com Docker, `npx supabase start` sobe um Supabase local já com as migrações.
 
 ## Próximas fases
-1. Contas a pagar (migração da aba PAGTO)
-2. Conciliação: extrato Safrapay, OFX Santander/Safra, contagem de cofre
-3. Fluxo de caixa (realizado + projetado) e DRE
-4. Integração com o Avec e módulo de CRM
+1. Conciliação: extrato Safrapay, OFX Santander/Safra, contagem de cofre
+2. Fluxo de caixa (realizado + projetado) e DRE
+3. Integração com o Avec e módulo de CRM

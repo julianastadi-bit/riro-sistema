@@ -128,3 +128,91 @@ export const ROTULO_GRUPO: Record<GrupoPagamento, string> = {
   credito_utilizado: "Crédito utilizado",
   divida: "Dívidas",
 };
+
+// ─── Contas a pagar ───
+export type FormaDespesa = "boleto" | "pix" | "transferencia" | "recibo" | "debito_automatico" | "cartao" | "dinheiro";
+export type StatusContaPagar = "aberto" | "pago" | "cancelado";
+
+export const ROTULO_FORMA_DESPESA: Record<FormaDespesa, string> = {
+  boleto: "Boleto",
+  pix: "Pix",
+  transferencia: "Transferência",
+  recibo: "Recibo",
+  debito_automatico: "Débito automático",
+  cartao: "Cartão",
+  dinheiro: "Dinheiro",
+};
+
+export interface Fornecedor {
+  id: string;
+  nome: string;
+  documento: string | null;
+  plano_conta_id: string | null;
+  forma_padrao: FormaDespesa | null;
+  chave_pix: string | null;
+  observacoes: string | null;
+  ativo: boolean;
+}
+
+export interface PlanoConta {
+  id: string;
+  codigo: string;
+  nome: string;
+  grupo: string;
+  tipo: string;
+  ativo: boolean;
+}
+
+export interface ContaPagar {
+  id: string;
+  empresa_id: string;
+  fornecedor_id: string;
+  plano_conta_id: string;
+  descricao: string;
+  documento: string | null;
+  forma: FormaDespesa;
+  data_lancamento: string;
+  competencia: string;
+  data_vencimento: string;
+  valor: number;
+  parcela: number | null;
+  total_parcelas: number | null;
+  grupo_id: string | null;
+  codigo_barras: string | null;
+  observacoes: string | null;
+  status: StatusContaPagar;
+  data_pagamento: string | null;
+  conta_pagamento_id: string | null;
+  juros_multa: number;
+  desconto: number;
+  valor_pago: number | null;
+  motivo_cancelamento: string | null;
+  boleto_path: string | null;
+  comprovante_path: string | null;
+  origem: "manual" | "planilha";
+  pago_em: string | null;
+}
+
+/** Situação exibida: separa "vencida" e "vence hoje" das demais abertas */
+export type Situacao = "vencida" | "hoje" | "aberta" | "paga" | "cancelada";
+export function situacaoConta(c: Pick<ContaPagar, "status" | "data_vencimento">, hoje: string): Situacao {
+  if (c.status === "pago") return "paga";
+  if (c.status === "cancelado") return "cancelada";
+  if (c.data_vencimento < hoje) return "vencida";
+  if (c.data_vencimento === hoje) return "hoje";
+  return "aberta";
+}
+export const ROTULO_SITUACAO: Record<Situacao, string> = {
+  vencida: "Vencida",
+  hoje: "Vence hoje",
+  aberta: "Em aberto",
+  paga: "Paga",
+  cancelada: "Cancelada",
+};
+export const TOM_SITUACAO = {
+  vencida: "vermelho",
+  hoje: "amarelo",
+  aberta: "azul",
+  paga: "verde",
+  cancelada: "neutro",
+} as const;

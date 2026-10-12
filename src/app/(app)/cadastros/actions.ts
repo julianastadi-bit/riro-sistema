@@ -113,3 +113,23 @@ export async function salvarPlanoConta(d: FormData) {
       });
   voltar("plano", error?.message);
 }
+
+export async function salvarFornecedor(d: FormData) {
+  await exigirPerfil("financeiro", "admin");
+  const supabase = await criarClienteServidor();
+  const id = texto(d, "id");
+  const campos = {
+    nome: texto(d, "nome").replace(/\s+/g, " "),
+    documento: opcional(d, "documento"),
+    plano_conta_id: opcional(d, "plano_conta_id"),
+    forma_padrao: opcional(d, "forma_padrao"),
+    chave_pix: opcional(d, "chave_pix"),
+    observacoes: opcional(d, "observacoes"),
+    ativo: id ? marcado(d, "ativo") : true,
+  };
+  if (!campos.nome) voltar("fornecedores", "Informe o nome.");
+  const { error } = id
+    ? await supabase.from("fornecedores").update(campos).eq("id", id)
+    : await supabase.from("fornecedores").insert(campos);
+  voltar("fornecedores", error?.code === "23505" ? "Já existe um fornecedor com esse nome." : error?.message);
+}

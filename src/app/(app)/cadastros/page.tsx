@@ -5,8 +5,9 @@ import { exigirPerfil } from "@/lib/perfil";
 import { criarClienteServidor } from "@/lib/supabase/server";
 import { formatarNumero } from "@/lib/formatacao";
 import type { ContaFinanceira, Empresa, FormaPagamento } from "@/lib/tipos";
-import { ROTULO_DESTINO, ROTULO_GRUPO } from "@/lib/tipos";
-import { salvarConta, salvarEmpresa, salvarForma, salvarPlanoConta } from "./actions";
+import { ROTULO_DESTINO, ROTULO_FORMA_DESPESA, ROTULO_GRUPO } from "@/lib/tipos";
+import type { Fornecedor } from "@/lib/tipos";
+import { salvarConta, salvarEmpresa, salvarForma, salvarFornecedor, salvarPlanoConta } from "./actions";
 
 export const metadata = { title: "Cadastros" };
 
@@ -15,6 +16,7 @@ const ABAS = [
   { id: "empresas", rotulo: "Empresas" },
   { id: "contas", rotulo: "Contas" },
   { id: "plano", rotulo: "Plano de contas" },
+  { id: "fornecedores", rotulo: "Fornecedores" },
 ] as const;
 
 const TIPOS_PLANO = ["receita", "deducao", "custo", "despesa", "investimento", "participacao", "financeiro"];
@@ -22,7 +24,7 @@ const TIPOS_PLANO = ["receita", "deducao", "custo", "despesa", "investimento", "
 export default async function PaginaCadastros({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string; erro?: string; ok?: string }>;
+  searchParams: Promise<{ aba?: string; erro?: string; ok?: string; busca?: string }>;
 }) {
   await exigirPerfil("financeiro", "admin");
   const sp = await searchParams;
@@ -54,6 +56,7 @@ export default async function PaginaCadastros({
       {aba === "empresas" && <AbaEmpresas />}
       {aba === "contas" && <AbaContas />}
       {aba === "plano" && <AbaPlano />}
+      {aba === "fornecedores" && <AbaFornecedores busca={sp.busca} />}
     </>
   );
 }
@@ -365,6 +368,86 @@ async function AbaPlano() {
             <Selecao name="tipo">{TIPOS_PLANO.map((t) => <option key={t} value={t}>{t}</option>)}</Selecao>
           </CampoRotulado>
           <CampoRotulado rotulo="Descrição"><Entrada name="descricao" /></CampoRotulado>
+          <Botao type="submit">Adicionar</Botao>
+        </form>
+      </Cartao>
+    </div>
+  );
+}
+
+async function AbaFornecedores({ busca }: { busca?: string }) {
+  const supabase = await criarClienteServidor();
+  const [{ data }, { data: categorias }, { data: usos }] = await Promise.all([
+    supabase.from("fornecedores").select("*").order("nome"),
+    supabase.from("plano_contas").select("id, codigo, nome").neq("tipo", "receita").eq("ativo", true).order("ordem"),
+    supabase.from("contas_pagar").select("fornecedor_id").neq("status", "cancelado").limit(10000),
+  ]);
+  const contagem = new Map<string, number>();
+  (usos ?? []).forEach((u) => contagem.set(u.fornecedor_id, (contagem.get(u.fornecedor_id) ?? 0) + 1));
+  const termo = (busca ?? "").trim().toLowerCase();
+  const fornecedores = ((data ?? []) as Fornecedor[]).filter((f) => !termo || f.nome.toLowerCase().includes(termo) || f.documento?.includes(termo));
+  const nomeCategoria = (id: string | null) => categorias?.find((c) => c.id === id);
+
+  const campos = (f?: Fornecedor) => (
+    <div className="grid gap-3 sm:grid-cols-3">
+      <CampoRotulado rotulo="Nome"><Entrada name="nome" defaultValue={f?.nome} required /></CampoRotulado>
+      <CampoRotulado rotulo="CNPJ/CPF"><Entrada name="documento" defaultValue={f?.documento ?? ""} /></CampoRotulado>
+      <CampoRotulado rotulo="Chave Pix"><Entrada name="chave_pix" defaultValue={f?.chave_pix ?? ""} /></CampoRotulado>
+      <CampoRotulado rotulo="Categoria padrão">
+        <Selecao name="plano_conta_id" defaultValue={f?.plano_conta_id ?? ""}>
+          <option value="">—</option>
+          {categorias?.map((c) => <option key={c.id} value={c.id}>{c.codigo} · {c.nome}</option>)}
+        </Selecao>
+      </CampoRotulado>
+      <CampoRotulado rotulo="Forma padrão">
+        <Selecao name="forma_padrao" defaultValue={f?.forma_padrao ?? ""}>
+          <option value="">—</option>
+          {Object.entries(ROTULO_FORMA_DESPESA).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+        </Selecao>
+      </CampoRotulado>
+      <CampoRotulado rotulo="Observações"><Entrada name="observacoes" defaultValue={f?.observacoes ?? ""} /></CampoRotulado>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      <form className="flex gap-2">
+        <input type="hidden" name="aba" value="fornecedores" />
+        <Entrada name="busca" placeholder="Buscar fornecedor ou CNPJ" defaultValue={busca ?? ""} className="max-w-sm" />
+        <Botao type="submit" variante="secundario">Buscar</Botao>
+      </form>
+      <Cartao>
+        {fornecedores.length === 0 && <p className="px-5 py-8 text-center text-sm text-grafite/50">Nenhum fornecedor.</p>}
+        {fornecedores.map((f) => {
+          const cat = nomeCategoria(f.plano_conta_id);
+          return (
+            <Editar
+              key={f.id}
+              resumo={
+                <div className="min-w-0 flex-1">
+                  <p className={cx("truncate text-sm font-medium", !f.ativo && "text-grafite/40 line-through")}>{f.nome}</p>
+                  <p className="mt-0.5 text-xs text-grafite/55">
+                    {cat ? `${cat.codigo} · ${cat.nome}` : "sem categoria padrão"}
+                    {f.documento && ` · ${f.documento}`}
+                    {` · ${contagem.get(f.id) ?? 0} conta(s)`}
+                  </p>
+                </div>
+              }
+            >
+              <form action={salvarFornecedor} className="space-y-4">
+                <input type="hidden" name="id" value={f.id} />
+                {campos(f)}
+                <Check nome="ativo" rotulo="Ativo" marcado={f.ativo} />
+                <Botao type="submit">Salvar</Botao>
+              </form>
+            </Editar>
+          );
+        })}
+      </Cartao>
+      <Cartao className="p-4 sm:p-5">
+        <h3 className="mb-4 text-sm font-medium">Novo fornecedor</h3>
+        <form action={salvarFornecedor} className="space-y-4">
+          {campos()}
           <Botao type="submit">Adicionar</Botao>
         </form>
       </Cartao>
