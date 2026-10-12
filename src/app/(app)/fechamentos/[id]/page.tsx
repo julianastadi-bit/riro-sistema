@@ -85,7 +85,7 @@ export default async function PaginaFechamento({ params }: { params: Promise<{ i
         urlComprovante={urlComprovante}
       />
 
-      <dl className="mt-8 grid gap-x-6 gap-y-2 text-xs text-grafite/55 sm:grid-cols-3">
+      <dl className="mb-24 mt-8 grid gap-x-6 gap-y-2 text-xs text-grafite/55 sm:grid-cols-3">
         <div>
           <dt className="uppercase tracking-wider">Lançado por</dt>
           <dd className="text-grafite/80">{nome(f.criado_por)}</dd>

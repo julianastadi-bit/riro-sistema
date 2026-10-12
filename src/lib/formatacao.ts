@@ -4,11 +4,18 @@ const numero = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximu
 export const formatarMoeda = (v: number | null | undefined) => moeda.format(Number(v ?? 0));
 export const formatarNumero = (v: number | null | undefined) => numero.format(Number(v ?? 0));
 
-/** "1.234,56" | "1234.56" | "1234,5" → 1234.56. Vazio → null. */
+/**
+ * Lê valores digitados no padrão brasileiro. Vazio → null.
+ *   "1.234,56" → 1234.56   "21.380" → 21380   "1.250.000" → 1250000
+ *   "1234,5"   → 1234.5    "1234.56" → 1234.56 (ponto decimal só quando não parece milhar)
+ */
 export function lerValor(texto: string): number | null {
   const limpo = texto.replace(/[R$\s]/g, "");
   if (!limpo) return null;
-  const normalizado = limpo.includes(",") ? limpo.replace(/\./g, "").replace(",", ".") : limpo;
+  let normalizado: string;
+  if (limpo.includes(",")) normalizado = limpo.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(limpo)) normalizado = limpo.replace(/\./g, "");
+  else normalizado = limpo;
   const n = Number(normalizado);
   return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
 }
