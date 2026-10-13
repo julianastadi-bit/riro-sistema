@@ -5,6 +5,8 @@ Sistema de gestão financeira do RIRO Salon.
 - **Fase 1:** fechamento de caixa diário → contas a receber
 - **Fase 2:** contas a pagar, fornecedores e importação da aba PAGTO
 
+> **Continuando o projeto?** Leia [`docs/PASSAGEM.md`](docs/PASSAGEM.md): contexto, decisões, modelo de dados, design, telas e pendências.
+
 Stack: Next.js 15 (App Router) · Supabase (Postgres, Auth, Storage, RLS) · Tailwind 4 · deploy na Netlify.
 
 ## Fluxo
